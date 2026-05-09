@@ -66,44 +66,39 @@ export default function CustomersPage() {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto -mx-4 px-4">
-            <table className="w-full text-base min-w-[600px]">
-              <thead>
-                <tr className="text-left text-gray-500 border-b dark:border-gray-700">
-                  <th className="pb-2 pr-4 font-medium">Name</th>
-                  <th className="pb-2 pr-4 font-medium">Phone</th>
-                  <th className="pb-2 pr-4 font-medium">Serial Card #</th>
-                  <th className="pb-2 pr-4 font-medium">Email</th>
-                  <th className="pb-2 font-medium">Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paged.map((c) => (
-                  <tr key={c.id} className="border-b dark:border-gray-800">
-                    <td className="py-3 pr-4 text-gray-900 dark:text-white font-medium">
-                      {c.customer.firstName} {c.customer.surname || ""}
-                    </td>
-                    <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">
-                      {c.customer.phone || "—"}
-                    </td>
-                    <td className="py-3 pr-4">
-                      <button
-                        onClick={() => setSelected(c.id)}
-                        className="text-lime-600 font-mono underline text-base"
-                      >
-                        {c.id}
-                      </button>
-                    </td>
-                    <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">
-                      {c.customer.email || "—"}
-                    </td>
-                    <td className="py-3 text-gray-600 dark:text-gray-300">
-                      {formatDate(c.createdAt)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {paged.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelected(c.id)}
+                className="w-full text-left p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:scale-95 transition-transform"
+              >
+                <div className="flex justify-between items-start">
+                  <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {c.customer.firstName} {c.customer.surname || ""}
+                  </span>
+                  <span className="text-sm text-gray-400 ml-2 shrink-0">
+                    {formatDate(c.createdAt)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
+                  <span className="font-mono text-lime-600 font-medium">{c.id}</span>
+                  <span>·</span>
+                  <span>{c.customer.phone || "—"}</span>
+                  {c.customer.email && (
+                    <>
+                      <span>·</span>
+                      <span className="truncate">{c.customer.email}</span>
+                    </>
+                  )}
+                </div>
+              </button>
+            ))}
+            {cards.length === 0 && (
+              <div className="text-center py-12 text-gray-500 text-lg">
+                No customers found.
+              </div>
+            )}
           </div>
 
           {totalPages > 1 && (
