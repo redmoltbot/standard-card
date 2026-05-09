@@ -12,7 +12,7 @@ export default function FindPage() {
   useEffect(() => {
     fetch("/api/customers?page=1&itemsPerPage=100")
       .then((r) => r.json())
-      .then((d) => setCustomers(d.items ?? d ?? []))
+      .then((d) => setCustomers(d.data ?? []))
       .finally(() => setLoading(false));
   }, []);
 

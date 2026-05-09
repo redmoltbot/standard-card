@@ -22,7 +22,7 @@ export default function CustomersPage() {
     try {
       const res = await fetch("/api/customers?page=1&itemsPerPage=100");
       const data = await res.json();
-      setCustomers(data.items ?? data ?? []);
+      setCustomers(data.data ?? []);
     } finally {
       setLoading(false);
     }

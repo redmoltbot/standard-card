@@ -16,7 +16,7 @@ export default function HomePage() {
     fetch("/api/customers?page=1&itemsPerPage=100")
       .then((r) => r.json())
       .then((d) => {
-        const count = d.total ?? d.totalItems ?? (Array.isArray(d) ? d.length : (d.items?.length ?? null));
+        const count = d.meta?.totalItems ?? d.data?.length ?? null;
         setTotalCustomers(count);
       })
       .catch(() => {});
