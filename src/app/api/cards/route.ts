@@ -9,7 +9,11 @@ export async function GET(request: NextRequest) {
   try {
     const res = await dwFetch(`/cards?${searchParams.toString()}`);
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    const active = (data.data ?? []).filter((c: { status: string }) => c.status !== "deleted");
+    return NextResponse.json(
+      { ...data, data: active, meta: { ...data.meta, totalItems: active.length } },
+      { status: res.status }
+    );
   } catch {
     return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
