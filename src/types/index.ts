@@ -55,5 +55,5 @@ export type ActivityLog = {
   cardNumber: string
   action: 'add-stamp' | 'subtract-stamp' | 'subtract-reward'
   count: number
-  comment: string
+  comment?: string
 }
