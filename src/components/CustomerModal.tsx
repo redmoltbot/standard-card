@@ -263,6 +263,10 @@ export default function CustomerModal({
                 <span className="dark:text-white break-all">
                   {card.customer.email || "—"}
                 </span>
+                <span className="text-gray-500">Customer ID</span>
+                <span className="dark:text-white font-mono text-sm break-all">
+                  {card.customer.id}
+                </span>
                 {card.customer.externalUserId && (
                   <>
                     <span className="text-gray-500">External ID</span>
