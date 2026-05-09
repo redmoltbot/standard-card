@@ -53,6 +53,7 @@ export default function CustomerModal({
 
   useEffect(() => {
     fetchCard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serialNumber]);
 
   const handleSubtractReward = async () => {
