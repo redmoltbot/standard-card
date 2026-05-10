@@ -5,10 +5,17 @@ import CustomerModal from "@/components/CustomerModal";
 type CardRow = {
   id: string;
   createdAt: string;
+  lastStampEarnedAt: string | null;
+  balance: {
+    numberStampsTotal: number;
+    stampsBeforeReward: number;
+  } | null;
+  customerId: string | null;
   customer: {
     firstName: string;
     surname: string | null;
     phone: string | null;
+    email: string | null;
   };
 };
 
@@ -17,10 +24,54 @@ function formatDate(dateStr: string): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+function formatStampDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function exportCSV(cards: CardRow[]) {
+  const today = new Date().toISOString().slice(0, 10);
+  const headers = ["Card ID", "Customer ID", "Customer Name", "Phone", "Email", "Last Stamp Earned At", "Total Stamps", "Stamps Before Reward"];
+  const rows = cards.map((c) => [
+    c.id,
+    c.customerId ?? "",
+    `${c.customer.firstName} ${c.customer.surname ?? ""}`.trim(),
+    c.customer.phone ?? "",
+    c.customer.email ?? "",
+    c.lastStampEarnedAt ?? "",
+    String(c.balance?.numberStampsTotal ?? 0),
+    String(c.balance?.stampsBeforeReward ?? 0),
+  ]);
+  const csv = [headers, ...rows]
+    .map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cards_export_${today}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function CardsPage() {
   const [cards, setCards] = useState<CardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // filter state
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [minStamps, setMinStamps] = useState("");
+  const [maxBeforeReward, setMaxBeforeReward] = useState("");
 
   const fetchCards = () => {
     setLoading(true);
@@ -34,18 +85,131 @@ export default function CardsPage() {
     fetchCards();
   }, []);
 
+  const filtered = cards.filter((c) => {
+    if (fromDate) {
+      if (!c.lastStampEarnedAt) return false;
+      if (new Date(c.lastStampEarnedAt) < new Date(fromDate)) return false;
+    }
+    if (toDate) {
+      if (!c.lastStampEarnedAt) return false;
+      // include the full toDate day
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59, 999);
+      if (new Date(c.lastStampEarnedAt) > end) return false;
+    }
+    if (minStamps !== "") {
+      const min = parseInt(minStamps, 10);
+      if (!isNaN(min) && min > 0) {
+        const total = c.balance?.numberStampsTotal ?? 0;
+        if (total < min) return false;
+      }
+    }
+    if (maxBeforeReward !== "") {
+      const max = parseInt(maxBeforeReward, 10);
+      if (!isNaN(max) && max >= 0) {
+        const before = c.balance?.stampsBeforeReward ?? 0;
+        if (before > max) return false;
+      }
+    }
+    return true;
+  });
+
+  const hasFilters = fromDate || toDate || (minStamps !== "" && minStamps !== "0") || maxBeforeReward !== "";
+
+  const clearFilters = () => {
+    setFromDate("");
+    setToDate("");
+    setMinStamps("");
+    setMaxBeforeReward("");
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Cards
         </h1>
-        <button
-          onClick={fetchCards}
-          className="py-2 px-4 rounded-xl bg-lime-500 text-white font-bold text-base"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => exportCSV(filtered)}
+            className="py-2 px-4 rounded-xl bg-blue-500 text-white font-bold text-base"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={fetchCards}
+            className="py-2 px-4 rounded-xl bg-lime-500 text-white font-bold text-base"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Last Stamp From
+            </label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Last Stamp To
+            </label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Min. Total Stamps
+            </label>
+            <input
+              type="number"
+              min="0"
+              placeholder="0"
+              value={minStamps}
+              onChange={(e) => setMinStamps(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+              Max. Stamps Before Reward
+            </label>
+            <input
+              type="number"
+              min="0"
+              placeholder="any"
+              value={maxBeforeReward}
+              onChange={(e) => setMaxBeforeReward(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            Showing {filtered.length} of {cards.length} cards
+          </span>
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-sm text-red-500 font-medium hover:text-red-600"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -54,7 +218,7 @@ export default function CardsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {cards.map((c) => (
+          {filtered.map((c) => (
             <button
               key={c.id}
               onClick={() => setSelected(c.id)}
@@ -78,11 +242,31 @@ export default function CardsPage() {
                   </div>
                 </div>
               </div>
+              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                <div>
+                  <span className="text-gray-400">Last stamp: </span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {formatStampDate(c.lastStampEarnedAt)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Total stamps: </span>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    {c.balance?.numberStampsTotal ?? 0}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Before reward: </span>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">
+                    {c.balance?.stampsBeforeReward ?? 0}
+                  </span>
+                </div>
+              </div>
             </button>
           ))}
-          {cards.length === 0 && (
+          {filtered.length === 0 && (
             <div className="text-center py-12 text-gray-500 text-lg">
-              No cards found.
+              {cards.length === 0 ? "No cards found." : "No cards match the current filters."}
             </div>
           )}
         </div>
