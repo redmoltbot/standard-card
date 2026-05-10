@@ -72,7 +72,6 @@ export default function CardsPage() {
   const [selected, setSelected] = useState<string | null>(null);
 
   // filter state
-  const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [minStamps, setMinStamps] = useState("");
   const [maxBeforeReward, setMaxBeforeReward] = useState("");
@@ -91,13 +90,10 @@ export default function CardsPage() {
   }, []);
 
   const filtered = cards.filter((c) => {
-    if (fromDate) {
-      if (new Date(c.createdAt) < new Date(fromDate)) return false;
-    }
     if (toDate) {
       const end = new Date(toDate);
       end.setHours(23, 59, 59, 999);
-      if (new Date(c.createdAt) > end) return false;
+      if (new Date(c.updatedAt) > end) return false;
     }
     if (minStamps !== "") {
       const min = parseInt(minStamps, 10);
@@ -119,10 +115,9 @@ export default function CardsPage() {
     return true;
   });
 
-  const hasFilters = fromDate || toDate || (minStamps !== "" && minStamps !== "0") || maxBeforeReward !== "" || statusFilter !== "";
+  const hasFilters = toDate || (minStamps !== "" && minStamps !== "0") || maxBeforeReward !== "" || statusFilter !== "";
 
   const clearFilters = () => {
-    setFromDate("");
     setToDate("");
     setMinStamps("");
     setMaxBeforeReward("");
@@ -160,8 +155,8 @@ export default function CardsPage() {
             </label>
             <input
               type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
               className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
             />
           </div>
