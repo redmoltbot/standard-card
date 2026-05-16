@@ -1,9 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 import { Lock } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useAppName } from "@/components/AppNameContext";
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "SupaClaw Cafe";
 const CORRECT_PIN = process.env.NEXT_PUBLIC_PIN ?? "7777";
 
 interface PinLockProps {
@@ -11,6 +10,7 @@ interface PinLockProps {
 }
 
 export default function PinLock({ onUnlock }: PinLockProps) {
+  const appName = useAppName();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
@@ -29,7 +29,7 @@ export default function PinLock({ onUnlock }: PinLockProps) {
     setError(false);
     if (index < 3) inputRefs[index + 1].current?.focus();
     if (next.every((d) => d !== "")) {
-      if (next.join("") === CORRECT_PIN) {
+      if (next.join("") === CORRECT_PIN.trim()) {
         onUnlock();
       } else {
         setShake(true);
@@ -52,21 +52,22 @@ export default function PinLock({ onUnlock }: PinLockProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-8">
       <Lock className="h-12 w-12 text-[var(--clr-primary)] mb-4" />
-      <h1 className="text-3xl font-bold mb-2 text-foreground">{APP_NAME}</h1>
+      <h1 className="text-3xl font-bold mb-2 text-foreground">{appName}</h1>
       <p className="text-lg text-muted-foreground mb-8">Enter PIN to continue</p>
       <div className={`flex gap-4 mb-4 ${shake ? "animate-shake" : ""}`}>
         {inputRefs.map((ref, i) => (
-          <Input
+          <input
             key={i}
             ref={ref}
             type="password"
+            inputMode="numeric"
             maxLength={1}
             value={digits[i]}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`w-16 h-16 text-center text-3xl font-bold rounded-xl ${
-              error ? "border-[var(--clr-danger)]" : ""
-            }`}
+            className={`w-16 h-16 text-center text-3xl font-bold rounded-xl border-2 bg-background text-foreground
+              focus:outline-none focus:ring-2 focus:ring-[var(--clr-primary)]
+              ${error ? "border-[var(--clr-danger)]" : "border-border"}`}
             autoFocus={i === 0}
           />
         ))}

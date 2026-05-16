@@ -2,8 +2,14 @@
 import { useState, useEffect } from "react";
 import PinLock from "@/components/PinLock";
 import BottomNav from "@/components/BottomNav";
+import { AppNameContext } from "@/components/AppNameContext";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+  appName: string;
+}
+
+export default function AppShell({ children, appName }: AppShellProps) {
   const [unlocked, setUnlocked] = useState(false);
   const [checked, setChecked] = useState(false);
 
@@ -25,12 +31,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (!checked) return null;
 
-  if (!unlocked) return <PinLock onUnlock={handleUnlock} />;
+  if (!unlocked) return (
+    <AppNameContext.Provider value={appName}>
+      <PinLock onUnlock={handleUnlock} />
+    </AppNameContext.Provider>
+  );
 
   return (
-    <>
+    <AppNameContext.Provider value={appName}>
       <main className="pb-20 min-h-screen">{children}</main>
       <BottomNav />
-    </>
+    </AppNameContext.Provider>
   );
 }

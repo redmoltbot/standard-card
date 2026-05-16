@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
-
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "SupaClaw Cafe";
+import { useAppName } from "@/components/AppNameContext";
 
 export default function HomePage() {
+  const APP_NAME = useAppName();
   const [cardNum, setCardNum] = useState("");
   const [stampsStr, setStampsStr] = useState("1");
   const [comment, setComment] = useState("");
