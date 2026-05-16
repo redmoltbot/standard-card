@@ -4,6 +4,12 @@ import Toast, { useToast } from "@/components/Toast";
 import ActivityLogComp from "@/components/ActivityLog";
 import ThemeToggle from "@/components/ThemeToggle";
 import { addLogEntry } from "@/lib/activityLog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { ExternalLink } from "lucide-react";
+
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "SupaClaw Cafe";
 
 export default function HomePage() {
   const [cardNum, setCardNum] = useState("");
@@ -16,45 +22,24 @@ export default function HomePage() {
   useEffect(() => {
     fetch("/api/cards?templateId=965363&page=1&itemsPerPage=100")
       .then((r) => r.json())
-      .then((d) => {
-        const count = d.meta?.totalItems ?? d.data?.length ?? null;
-        setTotalCustomers(count);
-      })
+      .then((d) => setTotalCustomers(d.meta?.totalItems ?? d.data?.length ?? null))
       .catch(() => {});
   }, []);
 
   const handleStamp = async (action: "add-stamp" | "subtract-stamp") => {
-    if (!cardNum.trim()) {
-      showToast("Enter a card number", "error");
-      return;
-    }
+    if (!cardNum.trim()) { showToast("Enter a card number", "error"); return; }
     setLoading(true);
     try {
+      const stamps = Math.max(1, parseInt(stampsStr) || 1);
       const res = await fetch(`/api/cards/${cardNum.trim()}/${action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: cardNum.trim(),
-          stamps: Math.max(1, parseInt(stampsStr) || 1),
-          comment,
-          purchaseSum: 0.1,
-        }),
+        body: JSON.stringify({ id: cardNum.trim(), stamps, comment, purchaseSum: 0.1 }),
       });
       if (!res.ok) throw new Error();
-      addLogEntry({
-        cardNumber: cardNum.trim(),
-        action,
-        count: Math.max(1, parseInt(stampsStr) || 1),
-        comment,
-      });
-      const stamps = Math.max(1, parseInt(stampsStr) || 1);
-      showToast(
-        `${action === "add-stamp" ? "Added" : "Subtracted"} ${stamps} stamp${stamps !== 1 ? "s" : ""}`,
-        "success"
-      );
-      setCardNum("");
-      setStampsStr("1");
-      setComment("");
+      addLogEntry({ cardNumber: cardNum.trim(), action, count: stamps, comment });
+      showToast(`${action === "add-stamp" ? "Added" : "Subtracted"} ${stamps} stamp${stamps !== 1 ? "s" : ""}`, "success");
+      setCardNum(""); setStampsStr("1"); setComment("");
     } catch {
       showToast("Action failed. Check card number.", "error");
     } finally {
@@ -64,89 +49,68 @@ export default function HomePage() {
 
   return (
     <div className="p-4 max-w-lg mx-auto">
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          SupaClaw Cafe
-        </h1>
+        <h1 className="text-3xl font-bold text-foreground">{APP_NAME}</h1>
         <ThemeToggle />
       </div>
 
-      {/* Stamp Form */}
-      <div className="space-y-4 mb-6">
-        <input
+      <div className="space-y-3 mb-6">
+        <Input
           type="text"
           placeholder="Serial Card Number"
           value={cardNum}
           onChange={(e) => setCardNum(e.target.value)}
-          className="w-full text-xl p-4 rounded-xl border-2 border-gray-300 focus:border-lime-500 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
+          className="text-xl py-6 rounded-xl"
         />
-        <input
+        <Input
           type="number"
           min={1}
           value={stampsStr}
           onChange={(e) => setStampsStr(e.target.value)}
-          onBlur={() => {
-            const n = parseInt(stampsStr);
-            if (!stampsStr || n < 1 || isNaN(n)) setStampsStr("1");
-          }}
-          className="w-full text-xl p-4 rounded-xl border-2 border-gray-300 focus:border-lime-500 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
+          onBlur={() => { const n = parseInt(stampsStr); if (!stampsStr || n < 1 || isNaN(n)) setStampsStr("1"); }}
+          className="text-xl py-6 rounded-xl"
         />
-        <input
+        <Input
           type="text"
           placeholder="Comment (optional)"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full text-xl p-4 rounded-xl border-2 border-gray-300 focus:border-lime-500 focus:outline-none dark:bg-gray-800 dark:text-white dark:border-gray-600"
+          className="text-xl py-6 rounded-xl"
         />
         <div className="flex gap-3">
-          <button
-            onClick={() => handleStamp("add-stamp")}
-            disabled={loading}
-            className="flex-1 py-4 px-6 text-xl font-bold rounded-2xl bg-lime-500 text-white disabled:opacity-50 active:scale-95 transition-transform"
-          >
+          <Button onClick={() => handleStamp("add-stamp")} disabled={loading} className="flex-1 py-6 text-xl font-bold rounded-2xl">
             {loading ? "..." : "+ Add Stamps"}
-          </button>
-          <button
-            onClick={() => handleStamp("subtract-stamp")}
-            disabled={loading}
-            className="flex-1 py-4 px-6 text-xl font-bold rounded-2xl bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 active:scale-95 transition-transform"
-          >
+          </Button>
+          <Button variant="outline" onClick={() => handleStamp("subtract-stamp")} disabled={loading} className="flex-1 py-6 text-xl font-bold rounded-2xl">
             {loading ? "..." : "− Subtract"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* Stats Row */}
       <div className="flex gap-3 mb-6">
-        <div className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center">
-          <div className="text-3xl font-bold text-lime-600">
-            {totalCustomers ?? "—"}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">Total Customers</div>
-        </div>
-        <div className="flex-1 bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 text-center">
-          <div className="text-3xl font-bold text-yellow-500">
-            {totalCustomers ?? "—"}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">Cards Issued</div>
-        </div>
+        <Card className="flex-1">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-[var(--clr-primary)]">{totalCustomers ?? "—"}</div>
+            <div className="text-sm text-muted-foreground mt-1">Total Customers</div>
+          </CardContent>
+        </Card>
+        <Card className="flex-1">
+          <CardContent className="p-4 text-center">
+            <div className="text-3xl font-bold text-[var(--clr-primary)]">{totalCustomers ?? "—"}</div>
+            <div className="text-sm text-muted-foreground mt-1">Cards Issued</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Telegram Button */}
-      <a
-        href="https://t.me/"
-        target="_blank"
-        rel="noreferrer"
-        className="block w-full py-4 px-6 text-xl font-bold rounded-2xl bg-yellow-400 text-gray-900 text-center mb-6 active:scale-95 transition-transform"
-      >
-        Connect to Telegram
+      <a href="https://t.me/" target="_blank" rel="noreferrer" className="block mb-6">
+        <Button variant="outline" className="w-full py-6 text-xl font-bold rounded-2xl gap-2">
+          <ExternalLink className="h-5 w-5" />
+          Connect to Telegram
+        </Button>
       </a>
 
-      {/* Activity Log */}
       <ActivityLogComp />
     </div>
   );
