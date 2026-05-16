@@ -1,24 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
 import CustomerModal from "@/components/CustomerModal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type CardRow = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  status: string | null;
-  device: string | null;
-  balance: {
-    numberStampsTotal: number;
-    stampsBeforeReward: number;
-  } | null;
+  id: string; createdAt: string; updatedAt: string; status: string | null; device: string | null;
+  balance: { numberStampsTotal: number; stampsBeforeReward: number } | null;
   customerId: string | null;
-  customer: {
-    firstName: string;
-    surname: string | null;
-    phone: string | null;
-    email: string | null;
-  };
+  customer: { firstName: string; surname: string | null; phone: string | null; email: string | null };
 };
 
 function formatDate(dateStr: string): string {
@@ -26,31 +20,14 @@ function formatDate(dateStr: string): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
-
 function exportCSV(cards: CardRow[]) {
   const today = new Date().toISOString().slice(0, 10);
-  const headers = ["Card ID", "Customer ID", "Customer Name", "Phone", "Email", "Last Stamp Earned At", "Total Stamps", "Stamps Before Reward", "Status", "Device"];
-  const rows = cards.map((c) => [
-    c.id,
-    c.customerId ?? "",
-    `${c.customer.firstName} ${c.customer.surname ?? ""}`.trim(),
-    c.customer.phone ?? "",
-    c.customer.email ?? "",
-    c.updatedAt ?? "",
-    String(c.balance?.numberStampsTotal ?? 0),
-    String(c.balance?.stampsBeforeReward ?? 0),
-    c.status ?? "",
-    c.device ?? "",
-  ]);
-  const csv = [headers, ...rows]
-    .map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(","))
-    .join("\n");
+  const headers = ["Card ID","Customer ID","Customer Name","Phone","Email","Last Stamp Earned At","Total Stamps","Stamps Before Reward","Status","Device"];
+  const rows = cards.map((c) => [c.id, c.customerId ?? "", `${c.customer.firstName} ${c.customer.surname ?? ""}`.trim(), c.customer.phone ?? "", c.customer.email ?? "", c.updatedAt ?? "", String(c.balance?.numberStampsTotal ?? 0), String(c.balance?.stampsBeforeReward ?? 0), c.status ?? "", c.device ?? ""]);
+  const csv = [headers, ...rows].map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `cards_export_${today}.csv`;
-  a.click();
+  const a = document.createElement("a"); a.href = url; a.download = `cards_export_${today}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
 
@@ -58,8 +35,6 @@ export default function CardsPage() {
   const [cards, setCards] = useState<CardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-
-  // filter state
   const [toDate, setToDate] = useState("");
   const [minStamps, setMinStamps] = useState("");
   const [maxBeforeReward, setMaxBeforeReward] = useState("");
@@ -68,221 +43,103 @@ export default function CardsPage() {
   const fetchCards = () => {
     setLoading(true);
     fetch("/api/cards?templateId=965363&page=1&itemsPerPage=100")
-      .then((r) => r.json())
-      .then((d) => setCards(d.data ?? []))
-      .finally(() => setLoading(false));
+      .then((r) => r.json()).then((d) => setCards(d.data ?? [])).finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    fetchCards();
-  }, []);
+  useEffect(() => { fetchCards(); }, []);
 
   const filtered = cards.filter((c) => {
-    if (toDate) {
-      const end = new Date(toDate);
-      end.setHours(23, 59, 59, 999);
-      if (new Date(c.updatedAt) > end) return false;
-    }
-    if (minStamps !== "") {
-      const min = parseInt(minStamps, 10);
-      if (!isNaN(min) && min > 0) {
-        const total = c.balance?.numberStampsTotal ?? 0;
-        if (total < min) return false;
-      }
-    }
-    if (maxBeforeReward !== "") {
-      const max = parseInt(maxBeforeReward, 10);
-      if (!isNaN(max) && max >= 0) {
-        const before = c.balance?.stampsBeforeReward ?? 0;
-        if (before > max) return false;
-      }
-    }
-    if (statusFilter !== "") {
-      if (c.status !== statusFilter) return false;
-    }
+    if (toDate) { const end = new Date(toDate); end.setHours(23,59,59,999); if (new Date(c.updatedAt) > end) return false; }
+    if (minStamps !== "") { const min = parseInt(minStamps, 10); if (!isNaN(min) && min > 0 && (c.balance?.numberStampsTotal ?? 0) < min) return false; }
+    if (maxBeforeReward !== "") { const max = parseInt(maxBeforeReward, 10); if (!isNaN(max) && max >= 0 && (c.balance?.stampsBeforeReward ?? 0) > max) return false; }
+    if (statusFilter !== "" && c.status !== statusFilter) return false;
     return true;
   });
 
   const hasFilters = toDate || (minStamps !== "" && minStamps !== "0") || maxBeforeReward !== "" || statusFilter !== "";
 
-  const clearFilters = () => {
-    setToDate("");
-    setMinStamps("");
-    setMaxBeforeReward("");
-    setStatusFilter("");
-  };
-
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Cards
-        </h1>
+        <h1 className="text-2xl font-bold text-foreground">Cards</h1>
         <div className="flex gap-2">
-          <button
-            onClick={() => exportCSV(filtered)}
-            className="py-2 px-4 rounded-xl bg-blue-500 text-white font-bold text-base"
-          >
-            Export CSV
-          </button>
-          <button
-            onClick={fetchCards}
-            className="py-2 px-4 rounded-xl bg-lime-500 text-white font-bold text-base"
-          >
-            Refresh
-          </button>
+          <Button variant="outline" size="sm" onClick={() => exportCSV(filtered)}>Export CSV</Button>
+          <Button size="sm" onClick={fetchCards}>Refresh</Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="mb-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Not active since
-            </label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-            />
+      <Card className="mb-4">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 space-y-1">
+              <Label>Not active since</Label>
+              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Min. Total Stamps</Label>
+              <Input type="number" min="0" placeholder="0" value={minStamps} onChange={(e) => setMinStamps(e.target.value)} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Max. Stamps Before Reward</Label>
+              <Input type="number" min="0" placeholder="any" value={maxBeforeReward} onChange={(e) => setMaxBeforeReward(e.target.value)} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Card Status</Label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "" | "installed" | "not_installed")}
+                className="flex h-9 w-full rounded-md border border-border bg-card px-3 py-1 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">All</option>
+                <option value="installed">Installed</option>
+                <option value="not_installed">Not Installed</option>
+              </select>
+            </div>
           </div>
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Min. Total Stamps
-            </label>
-            <input
-              type="number"
-              min="0"
-              placeholder="0"
-              value={minStamps}
-              onChange={(e) => setMinStamps(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-            />
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Showing {filtered.length} of {cards.length} cards</span>
+            {hasFilters && <button onClick={() => { setToDate(""); setMinStamps(""); setMaxBeforeReward(""); setStatusFilter(""); }} className="text-sm text-[var(--clr-danger)] font-medium hover:opacity-80">Clear Filters</button>}
           </div>
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Max. Stamps Before Reward
-            </label>
-            <input
-              type="number"
-              min="0"
-              placeholder="any"
-              value={maxBeforeReward}
-              onChange={(e) => setMaxBeforeReward(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Card Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as "" | "installed" | "not_installed")}
-              className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm"
-            >
-              <option value="">All</option>
-              <option value="installed">Installed</option>
-              <option value="not_installed">Not Installed</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Showing {filtered.length} of {cards.length} cards
-          </span>
-          {hasFilters && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-red-500 font-medium hover:text-red-600"
-            >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
-        <div className="text-center py-16 text-xl text-gray-500">
-          Loading...
-        </div>
+        <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-2xl" />)}</div>
       ) : (
         <div className="space-y-3">
           {filtered.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelected(c.id)}
-              className="w-full text-left p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 active:scale-95 transition-transform"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {c.customer.firstName} {c.customer.surname || ""}
+            <button key={c.id} onClick={() => setSelected(c.id)} className="w-full text-left active:scale-95 transition-transform">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="text-lg font-semibold text-foreground">{c.customer.firstName} {c.customer.surname || ""}</div>
+                      <div className="text-base text-muted-foreground mt-0.5">{c.customer.phone || "No phone"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-[var(--clr-primary)] text-base font-medium">{c.id}</div>
+                      <div className="text-sm text-muted-foreground mt-0.5">Last active: {formatDate(c.updatedAt)}</div>
+                    </div>
                   </div>
-                  <div className="text-base text-gray-500 mt-0.5">
-                    {c.customer.phone || "No phone"}
+                  <div className="mt-2 pt-2 border-t border-border flex flex-wrap gap-x-4 gap-y-1 text-sm items-center">
+                    <div><span className="text-muted-foreground">Total stamps: </span><span className="text-foreground font-medium">{c.balance?.numberStampsTotal ?? 0}</span></div>
+                    <div><span className="text-muted-foreground">Before reward: </span><span className="text-foreground font-medium">{c.balance?.stampsBeforeReward ?? 0}</span></div>
+                    {c.device && <div><span className="text-muted-foreground">Device: </span><span className="text-foreground">{c.device}</span></div>}
+                    {c.status && (
+                      <Badge className={c.status === "installed" ? "bg-[var(--clr-success-bg)] text-[var(--clr-success)] hover:bg-[var(--clr-success-bg)] border-0" : "bg-muted text-muted-foreground border-0"}>
+                        {c.status === "not_installed" ? "Not Installed" : c.status}
+                      </Badge>
+                    )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-lime-600 text-base font-medium">
-                    {c.id}
-                  </div>
-                  <div className="text-sm text-gray-400 mt-0.5">
-                    Last active: {formatDate(c.updatedAt)}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                <div>
-                  <span className="text-gray-400">Total stamps: </span>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {c.balance?.numberStampsTotal ?? 0}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-400">Before reward: </span>
-                  <span className="text-gray-700 dark:text-gray-300 font-medium">
-                    {c.balance?.stampsBeforeReward ?? 0}
-                  </span>
-                </div>
-                {c.device && (
-                  <div>
-                    <span className="text-gray-400">Device: </span>
-                    <span className="text-gray-700 dark:text-gray-300">{c.device}</span>
-                  </div>
-                )}
-                {c.status && (
-                  <div>
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        c.status === "installed"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                      }`}
-                    >
-                      {c.status === "not_installed" ? "Not Installed" : c.status}
-                    </span>
-                  </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
             </button>
           ))}
-          {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-500 text-lg">
-              {cards.length === 0 ? "No cards found." : "No cards match the current filters."}
-            </div>
-          )}
+          {filtered.length === 0 && <p className="text-center py-12 text-muted-foreground text-lg">{cards.length === 0 ? "No cards found." : "No cards match the current filters."}</p>}
         </div>
       )}
 
-      {selected && (
-        <CustomerModal
-          serialNumber={selected}
-          onClose={() => setSelected(null)}
-        />
-      )}
+      {selected && <CustomerModal serialNumber={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
