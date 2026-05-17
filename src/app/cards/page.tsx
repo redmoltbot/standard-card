@@ -42,7 +42,7 @@ export default function CardsPage() {
 
   const fetchCards = () => {
     setLoading(true);
-    fetch("/api/cards?templateId=965363&page=1&itemsPerPage=100")
+    fetch("/api/cards?page=1&itemsPerPage=100")
       .then((r) => r.json()).then((d) => setCards(d.data ?? [])).finally(() => setLoading(false));
   };
 

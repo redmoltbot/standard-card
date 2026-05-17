@@ -27,7 +27,7 @@ export default function CustomersPage() {
   const fetchCards = async () => {
     setPage(1); setLoading(true);
     try {
-      const res = await fetch("/api/cards?templateId=965363&page=1&itemsPerPage=100");
+      const res = await fetch("/api/cards?page=1&itemsPerPage=100");
       const data = await res.json();
       setCards(data.data ?? []);
     } finally { setLoading(false); }
