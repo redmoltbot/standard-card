@@ -12,6 +12,8 @@ type CardRow = {
   id: string; createdAt: string; updatedAt: string; status: string | null; device: string | null;
   balance: { numberStampsTotal: number; stampsBeforeReward: number } | null;
   customerId: string | null;
+  installLink: string | null;
+  shareLink: string | null;
   customer: { firstName: string; surname: string | null; phone: string | null; email: string | null };
 };
 
@@ -22,8 +24,8 @@ function formatDate(dateStr: string): string {
 
 function exportCSV(cards: CardRow[]) {
   const today = new Date().toISOString().slice(0, 10);
-  const headers = ["Card ID","Customer ID","Customer Name","Phone","Email","Last Stamp Earned At","Total Stamps","Stamps Before Reward","Status","Device"];
-  const rows = cards.map((c) => [c.id, c.customerId ?? "", `${c.customer.firstName} ${c.customer.surname ?? ""}`.trim(), c.customer.phone ?? "", c.customer.email ?? "", c.updatedAt ?? "", String(c.balance?.numberStampsTotal ?? 0), String(c.balance?.stampsBeforeReward ?? 0), c.status ?? "", c.device ?? ""]);
+  const headers = ["Card ID","Customer ID","Customer Name","Phone","Email","Last Stamp Earned At","Total Stamps","Stamps Before Reward","Status","Device","Install Link","Share Link"];
+  const rows = cards.map((c) => [c.id, c.customerId ?? "", `${c.customer.firstName} ${c.customer.surname ?? ""}`.trim(), c.customer.phone ?? "", c.customer.email ?? "", c.updatedAt ?? "", String(c.balance?.numberStampsTotal ?? 0), String(c.balance?.stampsBeforeReward ?? 0), c.status ?? "", c.device ?? "", c.installLink ?? "", c.shareLink ?? ""]);
   const csv = [headers, ...rows].map((row) => row.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
