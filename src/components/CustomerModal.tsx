@@ -99,7 +99,8 @@ export default function CustomerModal({ serialNumber, onClose }: CustomerModalPr
                 <span className="font-bold text-[var(--clr-warning)] text-2xl">{card.rewards}</span>
                 <span className="text-muted-foreground">Joined</span>
                 <span className="text-foreground">{formatDate(card.createdAt)}</span>
-                {card.downloadUrl && (<><span className="text-muted-foreground">Download</span><a href={card.downloadUrl} target="_blank" rel="noreferrer" className="text-[var(--clr-primary)] underline">Open link</a></>)}
+                {card.installLink && (<><span className="text-muted-foreground">Install Link</span><a href={card.installLink} target="_blank" rel="noreferrer" className="text-[var(--clr-primary)] underline truncate">Open</a></>)}
+                {card.shareLink && (<><span className="text-muted-foreground">Share Link</span><a href={card.shareLink} target="_blank" rel="noreferrer" className="text-[var(--clr-primary)] underline truncate">Open</a></>)}
                 {card.comment && (<><span className="text-muted-foreground">Comment</span><span className="text-foreground">{card.comment}</span></>)}
               </CardContent>
             </Card>
